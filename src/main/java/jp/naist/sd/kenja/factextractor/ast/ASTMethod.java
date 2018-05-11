@@ -2,7 +2,6 @@ package jp.naist.sd.kenja.factextractor.ast;
 
 import java.util.List;
 
-import antlr.Token;
 import jp.naist.sd.kenja.factextractor.Blob;
 import jp.naist.sd.kenja.factextractor.Tree;
 import jp.naist.sd.kenja.factextractor.Treeable;
@@ -15,7 +14,7 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 
 /**
  * A class which represents Method of Java for Historage.
- * 
+ *
  * @author Kenji Fujiwara
  *
  */
@@ -74,7 +73,7 @@ public class ASTMethod implements Treeable {
 
   /**
    * Factory method of ASTMethod from MethodDeclaration of Eclipse AST.
-   * 
+   *
    * @param node
    *          MethodDeclaration of Eclipse AST
    */
@@ -90,7 +89,7 @@ public class ASTMethod implements Treeable {
 
   /**
    * Return root tree name.
-   * 
+   *
    * @param node
    *          MethodDeclaration of Eclipse AST
    * @return name of root tree
@@ -118,7 +117,7 @@ public class ASTMethod implements Treeable {
 
   /**
    * Read and set method body to the Blob.
-   * 
+   *
    * @param node
    *          MethodDeclaration of Eclipse AST
    */
@@ -135,7 +134,7 @@ public class ASTMethod implements Treeable {
 
   /**
    * Read and set method parameters to the Blob.
-   * 
+   *
    * @param parametersList
    *          list of parameters
    */
@@ -165,34 +164,54 @@ public class ASTMethod implements Treeable {
   private void setTokens(MethodDeclaration node){
     tokens = new Blob(TOKENS_BLOB_NAME);
     String tokensBody = "";
-    IScanner scanner = ToolFactory.createScanner(true,false,false,"1.9");
-    scanner.setSource(node.getBody().toString().toCharArray());
-    int tokenType;
-    /*special token types
-      5: identifier
-      40: number literal
-      45: string literal
-     */
-    try {
-      while ((tokenType = scanner.getNextToken()) != ITerminalSymbols.TokenNameEOF) {
-        switch(tokenType){
-          case 5://identifier
-            tokensBody+="id";
-            break;
-          case 40://number literal
-            tokensBody+="numberLiteral";
-            break;
-          case 45:
-            tokensBody+="stringLiteral";
-            break;
-          default:
-            tokensBody+=new String(scanner.getCurrentTokenSource());
-            break;
-        }
-        tokensBody+="\n";
-      }
+    if (node.getBody() == null) {
+      tokensBody="";
     }
-    catch(Exception e){
+    else{
+      IScanner scanner = ToolFactory.createScanner(true,false,false,"1.9");
+      scanner.setSource(node.getBody().toString().toCharArray());
+      int tokenType;
+      try {
+        while ((tokenType = scanner.getNextToken()) != ITerminalSymbols.TokenNameEOF) {
+          switch(tokenType){
+            case ITerminalSymbols.TokenNameIdentifier:
+              tokensBody+="identifier";
+              break;
+            case ITerminalSymbols.TokenNameboolean:
+            case ITerminalSymbols.TokenNamebyte:
+            case ITerminalSymbols.TokenNamechar:
+            case ITerminalSymbols.TokenNamedouble:
+            case ITerminalSymbols.TokenNamefloat:
+            case ITerminalSymbols.TokenNameint:
+            case ITerminalSymbols.TokenNamelong:
+            case ITerminalSymbols.TokenNameshort:
+            case ITerminalSymbols.TokenNamevoid:
+              tokensBody+="primitiveType";
+              break;
+            case ITerminalSymbols.TokenNameIntegerLiteral:
+            case ITerminalSymbols.TokenNameLongLiteral:
+            case ITerminalSymbols.TokenNameFloatingPointLiteral:
+            case ITerminalSymbols.TokenNameDoubleLiteral:
+              tokensBody+="numberLiteral";
+              break;
+            case ITerminalSymbols.TokenNameCharacterLiteral:
+            case ITerminalSymbols.TokenNameStringLiteral:
+              tokensBody+="stringLiteral";
+              break;
+            case ITerminalSymbols.TokenNametrue:
+            case ITerminalSymbols.TokenNamefalse:
+              tokensBody+="booleanValue";
+              break;
+            default:
+              tokensBody+=new String(scanner.getCurrentTokenSource());
+              break;
+          }
+          tokensBody+="\n";
+        }
+      }
+      catch(Exception e){
+
+      }
 
     }
     tokens.setBody(tokensBody);
